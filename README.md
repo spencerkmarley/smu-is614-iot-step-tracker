@@ -1,1 +1,1 @@
-# smu-is614-iot-step-tracker
+# SMU IS614 IoT Step Tracker
