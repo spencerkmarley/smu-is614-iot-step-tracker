@@ -4,10 +4,8 @@ import time
 # MQTT client object
 mqttc = None
 
-# Topic to publish to. 
-# ***CHANGE THIS TO SOMETHING UNIQUE***
-TOPIC = "iot-YOUR_UNIQUE_TOPIC"
-
+# Topic to publish to.
+TOPIC = "spencerkmarley"
 
 # Handles an MQTT client connect event
 # This function is called once, just after the mqtt client is connected to the server.
@@ -22,11 +20,9 @@ def handle_mqtt_connack(client, userdata, flags, rc) -> None:
     print(f"Subscribed to: {TOPIC}")
     print(f"Publish something to {TOPIC} and the messages will appear here.")
 
-
 # Handles an incoming message from the MQTT broker.
 def handle_mqtt_message(client, userdata, msg) -> None:
     print(f"received msg | topic: {msg.topic} | payload: {msg.payload.decode('utf8')}")
-
 
 def main() -> None:
     global mqttc
@@ -63,6 +59,7 @@ def main() -> None:
 
     # exit if client couldn't connect even after waiting for a long time
     if waited_for_too_long:
+        
         logger.error(f"Can't connect to broker.mqttdashboard.com, waited for too long")
         return
 
