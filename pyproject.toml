@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "smu-is614-iot-step-tracker"
+version = "0.1.0"
+description = ""
+authors = ["Clarence <clarencesan@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.8.1"
+pandas = "^1.5.3"
+numpy = "^1.24.2"
+scikit-learn = "^1.2.1"
+xgboost = "^1.7.3"
+missingno = "^0.5.1"
+
+[tool.poetry.dev-dependencies]
+black = "^23.1.0"
+flake8 = "^6.0.0"
+isort = "^5.12.0"
+pre-commit = "^3.0.4"
+jupyter = "^1.0.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
