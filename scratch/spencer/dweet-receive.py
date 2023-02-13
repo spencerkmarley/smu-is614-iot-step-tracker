@@ -3,7 +3,7 @@ import dweepy
 import pprint
 
 def main() -> None:
-    thing_name = "spencerkmarley"
+    thing_name = "is614-iot/light/sensor1"
 
     while True:
         try:
