@@ -36,7 +36,7 @@ def publish(client, endpoint, root_pem, private_pem_key, certificate_pem_crt, to
     myAWSIoTMQTTClient.configureCredentials(root_pem, private_pem_key, certificate_pem_crt)
 
     myAWSIoTMQTTClient.connect()
-    myAWSIoTMQTTClient.publish(topic, payload, 1)
+    myAWSIoTMQTTClient.publish(topic, payload, 2)
     myAWSIoTMQTTClient.disconnect()
 
 publish(CLIENT, ENDPOINT, ROOT_PEM, PRIVATE_PEM_KEY, CERTIFICATE_PEM_CRT, TOPIC, json_string)
