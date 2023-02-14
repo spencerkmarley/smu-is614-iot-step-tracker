@@ -9,7 +9,7 @@ PRIVATE_PEM_KEY = "certificates/private.pem.key"
 CERTIFICATE_PEM_CRT = "certificates/certificate.pem.crt"
 TOPIC = "microbit"
 
-def lambda_handler(event, context):
+def handler(event, context):
     
     data = {
     "timestamp": int(round(time.time() * 1000)),
