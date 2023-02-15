@@ -8,7 +8,6 @@ PRIVATE_PEM_KEY = "certificates/33d027bba80745d5587a65c0d230a4de5eb7c3917c49d85e
 CERTIFICATE_PEM_CRT = "certificates/33d027bba80745d5587a65c0d230a4de5eb7c3917c49d85e2d456d7e83670b56-certificate.pem.crt"
 TOPIC = "microbit"
 
-ID = 12345678
 UUID = "230213_1452_clarence_test"
 GYRO_X = 15.26466284
 GYRO_Y = 84.76812997658814
@@ -17,7 +16,7 @@ ACCEL_X = -48.7129175729368
 ACCEL_Y = -52.266628054100394
 ACCEL_Z = 27.931961024295653
 
-csv = "{},{},{},{},{},{},{},{},{}".format(int(round(time.time() * 1000)), ID, UUID, GYRO_X, GYRO_Y, GYRO_Z, ACCEL_X, ACCEL_Y, ACCEL_Z)
+csv = "{},{},{},{},{},{},{},{}".format(int(round(time.time() * 1000)), UUID, GYRO_X, GYRO_Y, GYRO_Z, ACCEL_X, ACCEL_Y, ACCEL_Z)
 
 def publish(client, endpoint, root_pem, private_pem_key, certificate_pem_crt, topic, payload):
     
