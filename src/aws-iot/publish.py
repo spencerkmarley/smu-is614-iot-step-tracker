@@ -5,8 +5,8 @@ import time
 CLIENT = "microbit"
 ENDPOINT = "a336e03nfdcvqi-ats.iot.ap-southeast-1.amazonaws.com"
 ROOT_PEM = "certificates/root.pem"
-PRIVATE_PEM_KEY = "certificates/private.pem.key"
-CERTIFICATE_PEM_CRT = "certificates/certificate.pem.crt"
+PRIVATE_PEM_KEY = "certificates/33d027bba80745d5587a65c0d230a4de5eb7c3917c49d85e2d456d7e83670b56-private.pem.key"
+CERTIFICATE_PEM_CRT = "certificates/33d027bba80745d5587a65c0d230a4de5eb7c3917c49d85e2d456d7e83670b56-certificate.pem.crt"
 TOPIC = "microbit"
 
 ID = 123456
