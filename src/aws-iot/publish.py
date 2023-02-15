@@ -10,7 +10,8 @@ CERTIFICATE_PEM_CRT = "certificates/33d027bba80745d5587a65c0d230a4de5eb7c3917c49
 TOPIC = "microbit"
 
 ID = 123456
-GYRO_X = 10
+UUID = "230213_1452_clarence_test"
+GYRO_X = 15.26466284
 GYRO_Y = 84.76812997658814
 GYRO_Z = -7.0005309400135305
 ACCEL_X = -48.7129175729368
@@ -20,6 +21,7 @@ ACCEL_Z = 27.931961024295653
 data = {
     "timestamp": int(round(time.time() * 1000)),
     "id": ID,
+    "uuid": UUID,
     "gyro_x": GYRO_X,
     "gyro_y": GYRO_Y,
     "gyro_z": GYRO_Z,
