@@ -29,3 +29,5 @@ def publish(client, endpoint, root_pem, private_pem_key, certificate_pem_crt, to
     myAWSIoTMQTTClient.disconnect()
 
 publish(CLIENT, ENDPOINT, ROOT_PEM, PRIVATE_PEM_KEY, CERTIFICATE_PEM_CRT, TOPIC, csv)
+
+print ("success")

@@ -11,6 +11,9 @@ numpy = "^1.24.2"
 scikit-learn = "^1.2.1"
 xgboost = "^1.7.3"
 missingno = "^0.5.1"
+boto3 = ">=1.26.72"
+scipy = ">=1.10.0"
+tsfresh = ">=0.20.0"
 
 [tool.poetry.dev-dependencies]
 black = "^23.1.0"
