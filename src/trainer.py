@@ -1,5 +1,7 @@
 from src.model import BaseModel
 from typing import Any
+from pathlib import Path
+import joblib
 
 
 class Trainer:
@@ -15,6 +17,29 @@ class Trainer:
         return f"""
         {self.__class__.__name__} (model_config={self.model_config}, eval_config={self.eval_config}, hyperparam_space={self.hyperparam_space})
         """
+
+    def evaluate(self):
+        pass
+
+    def export_best_model(self, dir_path: Path, name: str) -> None:
+        """
+        Exports a trained model to the given directory.
+
+        Parameters
+        ----------
+        model : The trained model to be exported
+        dir_path : Target directory
+        name : File name to save the model as
+        """
+
+        path = f"{dir_path}/{name}"
+        joblib.dump(self.model_config, path)
+
+        ### To change
+        print(f"Model saved to 'path'")
+
+    def predict(self):
+        pass
 
 
 if __name__ == "__main__":
