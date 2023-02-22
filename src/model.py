@@ -1,85 +1,50 @@
 import pandas as pd
-import warnings
-from datetime import datetime
-from typing import List, Optional, Tuple
-
-from sklearn.base import BaseEstimator
-from sklearn.pipeline import Pipeline
+import numpy.typing as npt
 from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import MinMaxScaler
-from src.config import PATHS, MLCONFIG
-from sklearn.metrics import roc_auc_score
+from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
+from sklearn.utils.multiclass import unique_labels
 
 
-# Setup the hyperparameter grid
-log_reg_param_grid = {
-    # regularization param: higher C = less regularization
-    "log_reg__C": [0.001, 0.01, 0.1, 1, 10, 100, 1000],
-    # specifies kernel type to be used
-    "log_reg__penalty": ["l1", "l2", "none"],
-}
+class BaseModel(BaseEstimator, ClassifierMixin):
+    def __init__(self, estimator: BaseEstimator = None) -> None:
+        self.estimator = estimator
 
-mm_scale = MinMaxScaler(feature_range=(0, 1))
-model_types = {"Logistic Regression": LogisticRegression()}
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}: {repr(self.estimator)})"
 
+    def fit(self, X, y: npt.ArrayLike = None) -> BaseEstimator:
+        X, y = check_X_y(X, y)
+        self.classes_ = unique_labels(y)
+        self.estimator.fit(X, y)
+        return self
 
-class BaseModel(BaseEstimator):
-    def __init__(
-        self,
-        model_type="Logistic Regression",
-        scaler=mm_scale,
-        params: dict = None,
-    ) -> None:
-        self.model_type = model_type
-        self.model = model_types.get("Logistic Regression")
+    def predict(self, X: pd.DataFrame) -> npt.ArrayLike:
+        check_is_fitted(self)
+        X = check_array(X)
+        return self.estimator.predict(X)
 
-        if params is None:
-            params = log_reg_param_grid
+    def predict_proba(self, X: pd.DataFrame) -> npt.ArrayLike:
+        check_is_fitted(self)
+        X = check_array(X)
+        return self.estimator.predict_proba(X)
 
-        self.params = params
+    def score(self, X: pd.DataFrame, y: npt.ArrayLike) -> float:
+        check_is_fitted(self)
+        X = check_array(X)
+        return self.estimator.score(X, y)
 
-        self.scaler = scaler
-
-    def __repr__(self):
-        return f"{self.__class__.__name__} (model_type={self.model_type})"
-
-    # def get_params(self, deep=True) -> dict:
-    #     return {
-    #         "model_type": self.model_type,
-    #         "params": self.params,
-    #         "scaler": self.scaler,
-    #     }
-
-    def fit(self, X, y):
-        X_scaled = self.scaler.fit_transform(X)
-        self.model.set_params(**self.params)
-        self.model.fit(X_scaled, y)
-
-    def predict_proba(self, X):
-        X_scaled = self.scaler.transform(X)
-        return self.model.predict_proba(X_scaled)
-
-    def score(self, X, y):
-        X_scaled = self.scaler.transform(X)
-        return roc_auc_score(y, self.model.predict_proba(X_scaled)[:, 1])
-
-    def summary(self):
-        model_params = self.get_params()
-        model_name = model_params.pop("model_type")
-        scaler_name = str(type(self.scaler)).split(".")[-1][:-2]
-
-        print(f"{model_name} ({scaler_name} scaler) model parameters:")
+    def summary(self) -> None:
+        model_params = self.estimator.get_params()
+        print(repr(self))
         for param, value in model_params.items():
             print(f"\t{param}: {value}")
 
 
+def main():
+    mdl = BaseModel(LogisticRegression())
+    mdl.summary()
+
+
 if __name__ == "__main__":
-    mdl = BaseModel(model_type="Logistic Regression")
-    print(repr(mdl))
-
-    ### test methods
-    print(f"Starting params CHECK")
-    for param, value in mdl.get_params(deep=True).items():
-        print(f"{param} : {value}")
-
-    # mdl.summary()
+    main()
