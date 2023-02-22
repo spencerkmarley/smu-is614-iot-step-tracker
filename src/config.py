@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
-
-from sklearn.model_selection import TimeSeriesSplit
+from sklearn.metrics import fbeta_score, make_scorer
+from sklearn.model_selection import StratifiedShuffleSplit
 
 
 class PATHS:
@@ -13,7 +13,21 @@ class PATHS:
 
 class MLCONFIG:
     RANDOM_STATE = 123
-    CV_SPLIT = TimeSeriesSplit(n_splits=5)
+    CV_SPLIT = StratifiedShuffleSplit(
+        n_splits=5, test_size=0.2, train_size=0.8, random_state=RANDOM_STATE
+    )
+    BASE_SCORER = {
+        "AUC": "roc_auc",
+        "F_score": make_scorer(fbeta_score, beta=1),
+    }
+
+
+class QUERY:
+    RAW_DATA = """
+      SELECT
+        *
+      FROM "smu-iot"."microbit"
+      """
 
 
 def print_config() -> None:
