@@ -5,7 +5,9 @@ from sklearn.model_selection import StratifiedShuffleSplit
 
 
 class PATHS:
-    ROOT_DIR = Path(os.path.realpath(os.path.join(os.path.dirname(__file__), "..")))
+    ROOT_DIR = Path(
+        os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
+    )
     DATA_DIR = ROOT_DIR / "data"
     MODEL_DIR = ROOT_DIR / "models"
     MISC_DIR = ROOT_DIR / "misc"
@@ -16,10 +18,7 @@ class MLCONFIG:
     CV_SPLIT = StratifiedShuffleSplit(
         n_splits=5, test_size=0.2, train_size=0.8, random_state=RANDOM_STATE
     )
-    BASE_SCORER = {
-        "AUC": "roc_auc",
-        "F_score": make_scorer(fbeta_score, beta=1),
-    }
+    BASE_SCORER = {"AUC": "roc_auc_ovr", "F_score": "f1_weighted"}
 
 
 class QUERY:
