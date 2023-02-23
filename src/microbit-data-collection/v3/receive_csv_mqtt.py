@@ -50,15 +50,15 @@ def handle_serial_data(s: serial.Serial) -> None:
     print(payload)
 
 # declare how long you want to collect the data      
-seconds = 240 #put a shorter timing to test out first  
+seconds = 300 #put a shorter timing to test out first  
 # declare the uuid of the data
 # uuid = 'licheng_walk'+ '_' + str(datetime.now().strftime("%m-%d-%H-%M"))
-uuid = 'licheng_walk'
+uuid = 'licheng_dynamic_1'
     
 s = serial.Serial()
 s.baudrate = 115200
 s.port = "COM4"
-s.set_buffer_size(rx_size = 12800, tx_size = 12800)
+# s.set_buffer_size(rx_size = 12800, tx_size = 12800)
 s.open()
 print('port opened')
 s.reset_input_buffer()
@@ -91,7 +91,8 @@ while done == False:
     if message[0] == 'accel': 
         # get current time       
         current_time = time.time()        
-        accel_entry = [str(round(current_time-start_time, 2)), uuid, message[1], message[2], message[3]]
+        accel_entry = [str(int(round(time.time() * 1000))), str(round(current_time-start_time, 2)), 
+                       uuid, message[1], message[2], message[3]]
         # send to queue
         queue_accel.append(accel_entry)
         
@@ -100,12 +101,12 @@ while done == False:
         gyro_entry = [message[1], message[2], message[3]]
         # send to queue
         queue_gyro.append(gyro_entry)
-            
+        
     # check if both queue are not empty: 
     if (len(queue_accel) !=0 and len(queue_gyro) !=0): 
         a = queue_accel.pop(0)
         g = queue_gyro.pop(0)
-        string_final = a[0] + ',' + a[1] + ',' + g[0] + ',' + g[1] + ',' + g[2] + ',' + a[2] + ',' + a[3] + ',' + a[4]
+        string_final = a[0] + ',' + a[1] + ',' + a[2] + ',' + g[0] + ',' + g[1] + ',' + g[2] + ',' + a[3] + ',' + a[4] + ',' + a[5]
         
         # create/update payload
         
