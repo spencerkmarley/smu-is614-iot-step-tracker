@@ -1,15 +1,16 @@
-from pathlib import Path
 from typing import Dict, Tuple
 import numpy.typing as npt
 from sklearn.base import TransformerMixin
 from sklearn.model_selection import BaseShuffleSplit
-import joblib
+from datetime import datetime
+from src.config import PATHS
 import mlflow
 import mlflow.sklearn
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV
 from sklearn import datasets
 import pandas as pd
+import argparse
 
 from src.config import MLCONFIG
 from src.model import BaseModel
@@ -42,12 +43,18 @@ class Trainer:
 
     def __repr__(self) -> str:
         return f"""
-        {self.__class__.__name__} (model_config={self.model_config}, eval_config={self.eval_config}, hyperparam_space={self.hyperparam_space})
+        {self.__class__.__name__}
+        \tmodel_config={self.model_config}
+        \teval_config={self.eval_config}
+        \thyperparam_space={self.hyperparam_space}
         """
 
     def fit(self, X: pd.DataFrame, y: npt.ArrayLike):
         self.grid_search_cv.fit(X, y)
         return self
+
+    def predict(self, X: pd.DataFrame) -> npt.ArrayLike:
+        return self.grid_search_cv.predict(X)
 
     def evaluate(self) -> Tuple:
         best_params = self.grid_search_cv.best_params_
@@ -72,29 +79,52 @@ class Trainer:
     #     ### To change
     #     print(f"Model saved to 'path'")
 
-    def predict(self):
-        # To edit
-        pass
-
 
 if __name__ == "__main__":
-    mdl = BaseModel()
-    scaler = MLCONFIG.SCALERS.get("Quantile")
-    hyperparams = MLCONFIG.HYPERPARAMETERS.get("LogisticRegression")
-    eval_config = MLCONFIG.BASE_SCORER
-    cv_splitter = MLCONFIG.CV_SPLIT
-
-    train_run = Trainer(
-        model_config=mdl,
-        scaler=scaler,
-        hyperparam_space=hyperparams,
-        eval_config=eval_config,
-        cv_splitter=cv_splitter,
+    # parse arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--base", type=str, default="lr", required=False, choices=["lr", "rf"]
     )
+    parser.add_argument(
+        "--scaler",
+        type=str,
+        default="mm",
+        required=False,
+        choices=["mm", "ss", "qt"],
+    )
+    args = parser.parse_args()
+    scaler = {"mm": "MinMax", "ss": "Standard", "qt": "Quantile"}
+    base = {"lr": "LogisticRegression", "rf": "RandomForest"}
 
     # load some sample data
     iris = datasets.load_iris()
     X = pd.DataFrame(iris.data[:, :2], columns=["a", "b"])
     y = iris.target
-    train_run.fit(X, y)
-    print(repr(train_run))
+    ID = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    # Set up experiment
+    mlflow.set_tracking_uri(f"{PATHS.ROOT_DIR}/mlflow/mlruns")
+    print(f"{PATHS.ROOT_DIR}/mlflow/mlruns")
+    experiment = mlflow.set_experiment(experiment_name="ml_experiments")
+
+    with mlflow.start_run(
+        experiment_id=experiment.experiment_id, run_name=f"model_{ID}"
+    ):
+        MODEL = BaseModel()
+        SCALER = MLCONFIG.SCALERS.get(scaler.get(args.scaler))
+        HYP = MLCONFIG.HYPERPARAMETERS.get(base.get(args.base))
+        trainer = Trainer(model_config=MODEL, scaler=SCALER, hyperparam_space=HYP)
+
+        trainer.fit(X, y)
+        best_params, best_est, best_score = trainer.evaluate()
+
+        mlflow.log_params(params=best_params)
+        mlflow.log_metric(key="AUC", value=best_score)
+        mlflow.set_tags(
+            tags={
+                "Base Model": base.get(args.base),
+                "Scaler": scaler.get(args.scaler),
+            }
+        )
+        mlflow.sklearn.log_model(best_est, "model")
