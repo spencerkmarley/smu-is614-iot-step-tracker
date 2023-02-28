@@ -22,7 +22,6 @@ class PATHS:
     MODELS = f"{BUCKET}/models"
     PROCESSED = f"{BUCKET}/processed"
 
-
 class MLCONFIG:
     RANDOM_STATE = 123
     CV_SPLIT = StratifiedShuffleSplit(
@@ -64,7 +63,6 @@ class MLCONFIG:
             random_state=RANDOM_STATE,
         ),
     }
-
 
 class KEYS:
     AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]

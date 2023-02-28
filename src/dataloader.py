@@ -24,7 +24,11 @@ class DataLoader:
             Returns:
                 None
         """
-        self.data = awswrangler.athena.read_sql_query(sql=query, database=database)
+        try:
+            self.data = awswrangler.athena.read_sql_query(sql=query, database=database)
+            print ("Query is successful!")
+        except:
+            print (f"Unable to connect to {database}")
 
         return self.data
 
