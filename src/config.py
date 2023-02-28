@@ -4,6 +4,11 @@ import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import (
+    StandardScaler,
+    MinMaxScaler,
+    QuantileTransformer,
+)
 
 
 class PATHS:
@@ -11,6 +16,12 @@ class PATHS:
     DATA_DIR = ROOT_DIR / "data"
     MODEL_DIR = ROOT_DIR / "models"
     MISC_DIR = ROOT_DIR / "misc"
+    BUCKET = "smu-is614-iot-step-tracker"
+    RAW = f"{BUCKET}/raw"
+    QUERIES = f"{BUCKET}/queries"
+    MODELS = f"{BUCKET}/models"
+    PROCESSED = f"{BUCKET}/processed"
+    RESULT = f"{BUCKET}/inference/result"
 
 
 class MLCONFIG:
@@ -20,14 +31,14 @@ class MLCONFIG:
     )
     BASE_SCORER = {"AUC": "roc_auc_ovr", "F_score": "f1_weighted"}
     HYPERPARAMETERS = {
-        "log_reg_param_grid": {
+        "LogisticRegression": {
             "clf": [LogisticRegression(max_iter=1000, solver="liblinear")],
             # regularization param: higher C = less regularization
             "clf__C": [0.001, 0.01, 0.1, 1, 10, 100, 1000],
             # specifies kernel type to be used
             "clf__penalty": ["l1", "l2"],
         },
-        "random_forest_param_grid": {
+        "RandomForest": {
             "clf": [RandomForestClassifier()],
             # select whe
             "clf__criterion": ["gini", "entropy"],
@@ -40,6 +51,26 @@ class MLCONFIG:
             "clf__bootstrap": [True, False],
         },
     }
+
+    SCALERS = {
+        # Scales each feature to the range of 0 and 1
+        "MinMax": MinMaxScaler(feature_range=(0, 1)),
+        # Standardize features by removing the mean and scaling to unit variance.
+        #   z = (x - u) / s
+        "Standard": StandardScaler(),
+        # Transform features using quantile information to follow a normal distribution
+        "Quantile": QuantileTransformer(
+            n_quantiles=1000,
+            output_distribution="normal",
+            random_state=RANDOM_STATE,
+        ),
+    }
+
+
+class KEYS:
+    AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
+    AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
+    AWS_DEFAULT_REGION = os.environ["AWS_DEFAULT_REGION"]
 
 
 class QUERY:
@@ -59,6 +90,11 @@ def print_config() -> None:
     DATA_DIR: {PATHS.DATA_DIR}
     MODEL_DIR: {PATHS.MODEL_DIR}
     MISC_DIR: {PATHS.MISC_DIR}
+    BUCKET: {PATHS.BUCKET}
+    RAW: {PATHS.RAW}
+    QUERIES: {PATHS.QUERIES}
+    MODELS: {PATHS.MODELS}
+    PROCESSED: {PATHS.PROCESSED}
 
     RANDOM_STATE: {MLCONFIG.RANDOM_STATE}
     CV_SPLIT: {MLCONFIG.CV_SPLIT}
