@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
+import awswrangler as wr
 from dataloader import DataLoader
-from config import MLCONFIG
+from config import MLCONFIG, PATHS
 from sklearn.base import BaseEstimator, TransformerMixin
 from tsfresh.feature_selection.relevance import calculate_relevance_table
 from tsfresh import extract_features, feature_extraction
@@ -47,9 +48,10 @@ class FeatureEngineering(BaseEstimator, TransformerMixin):
         # feature extraction
         X_eng = self._extract_features(X_eng)
         # upload to S3
-        #TODO: Need help to fix this
-        # X_eng.to_csv(
-        #     f"s3://smu-is614-iot-step-tracker/inference/result/{X_eng.timestamp.max()}.csv", index=False)
+        wr.s3.to_csv(X_eng,
+                     f"s3://{PATHS.INTERIM}/{X_eng.timestamp.max()}.csv",
+                     index=False)
+
 
         return X_eng[self.TOP_FEATURES], X_eng[['target_label']]
 
@@ -129,4 +131,3 @@ if __name__ == "__main__":
     """
     df = dataloader.load_data(QUERY, 'smu-iot')
     feature_eng = FeatureEngineering()
-    print (feature_eng.transform(df))
