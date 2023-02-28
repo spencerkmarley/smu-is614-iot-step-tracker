@@ -22,7 +22,7 @@ class PATHS:
     MODELS = f"{BUCKET}/models"
     PROCESSED = f"{BUCKET}/processed"
     RESULT = f"{BUCKET}/inference/result"
-    INTERIM = f"{BUCKET}/inference/interm"
+    INTERIM = f"{BUCKET}/inference/interim"
 
 
 class MLCONFIG:
