@@ -21,6 +21,7 @@ class PATHS:
     QUERIES = f"{BUCKET}/queries"
     MODELS = f"{BUCKET}/models"
     PROCESSED = f"{BUCKET}/processed"
+    RESULT = f"{BUCKET}/inference/result"
 
 
 class MLCONFIG:
@@ -64,6 +65,19 @@ class MLCONFIG:
             random_state=RANDOM_STATE,
         ),
     }
+
+    STEP_SECONDS = 0.07
+    WINDOW_DURATION = 4
+    WINDOW_N = 58 # approx to 4/0.07
+    BASE_FEATURES = [
+        'accel_x',
+        'gyro_x',
+        'accel_y',
+        'gyro_y',
+        'accel_z',
+        'gyro_z'
+    ]
+
 
 
 class KEYS:
