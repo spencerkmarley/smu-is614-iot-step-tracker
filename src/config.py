@@ -22,6 +22,7 @@ class PATHS:
     MODELS = f"{BUCKET}/models"
     PROCESSED = f"{BUCKET}/processed"
     RESULT = f"{BUCKET}/inference/result"
+    INTERIM = f"{BUCKET}/inference/interm"
 
 
 class MLCONFIG:
@@ -67,8 +68,6 @@ class MLCONFIG:
     }
 
     STEP_SECONDS = 0.07
-    WINDOW_DURATION = 4
-    WINDOW_N = 58 # approx to 4/0.07
     BASE_FEATURES = [
         'accel_x',
         'gyro_x',
@@ -77,7 +76,61 @@ class MLCONFIG:
         'accel_z',
         'gyro_z'
     ]
-
+    LABEL_ENCODING_MAP = {
+        'walk': 1,
+        'dynamic': 2,
+        'box': 2
+    }
+    STEPS_COUNT_FEATURES = [
+        'gyro_x_post__number_peaks__n_5',
+        'gyro_y_post__number_peaks__n_5',
+        'gyro_z_post__number_peaks__n_5'
+    ]
+    TOP_FEATURES = ['accel_x_post__maximum', 'accel_y_post__count_above__t_0',
+         'accel_y_post__quantile__q_0.2', 'accel_x_post__abs_energy',
+         'gyro_y_post__change_quantiles__f_agg_"mean"__isabs_True__qh_0.6__ql_0.2',
+         'gyro_y_post__ratio_beyond_r_sigma__r_0.5',
+         'accel_y_post__autocorrelation__lag_4',
+         'accel_x_post__change_quantiles__f_agg_"var"__isabs_False__qh_0.6__ql_0.2',
+         'gyro_z_post__lempel_ziv_complexity__bins_10',
+         'gyro_z_post__lempel_ziv_complexity__bins_3',
+         'gyro_x_post__fft_coefficient__attr_"abs"__coeff_5',
+         'accel_y_post__minimum', 'accel_x_post__absolute_maximum',
+         'accel_z_post__autocorrelation__lag_5',
+         'accel_x_post__mean_n_absolute_max__number_of_maxima_7',
+         'gyro_y_post__percentage_of_reoccurring_datapoints_to_all_datapoints',
+         'accel_x_post__change_quantiles__f_agg_"mean"__isabs_True__qh_1.0__ql_0.0',
+         'accel_y_post__lempel_ziv_complexity__bins_5',
+         'gyro_z_post__large_standard_deviation__r_0.25',
+         'accel_y_post__quantile__q_0.3',
+         'accel_y_post__longest_strike_below_mean',
+         'gyro_z_post__change_quantiles__f_agg_"mean"__isabs_True__qh_0.6__ql_0.4',
+         'accel_y_post__change_quantiles__f_agg_"mean"__isabs_True__qh_0.8__ql_0.2',
+         'accel_z_post__linear_trend__attr_"pvalue"',
+         'gyro_x_post__sum_values',
+         'gyro_z_post__change_quantiles__f_agg_"mean"__isabs_True__qh_0.6__ql_0.2',
+         'gyro_y_post__ratio_beyond_r_sigma__r_3', 'gyro_z_post__kurtosis',
+         'accel_y_post__permutation_entropy__dimension_3__tau_1',
+         'gyro_x_post__cwt_coefficients__coeff_7__w_10__widths_(2, 5, 10, 20)',
+         'accel_x_post__fft_coefficient__attr_"abs"__coeff_3',
+         'accel_y_post__binned_entropy__max_bins_10',
+         'gyro_z_post__change_quantiles__f_agg_"mean"__isabs_True__qh_0.6__ql_0.0',
+         'accel_y_post__ratio_beyond_r_sigma__r_0.5',
+         'accel_x_post__change_quantiles__f_agg_"var"__isabs_True__qh_1.0__ql_0.4',
+         'accel_x_post__agg_linear_trend__attr_"stderr"__chunk_len_5__f_agg_"min"',
+         'accel_z_post__spkt_welch_density__coeff_2',
+         'accel_z_post__longest_strike_below_mean',
+         'accel_y_post__cid_ce__normalize_True',
+         'gyro_z_post__fft_coefficient__attr_"abs"__coeff_1',
+         'gyro_x_post__change_quantiles__f_agg_"var"__isabs_True__qh_0.6__ql_0.4',
+         'gyro_x_post__lempel_ziv_complexity__bins_2',
+         'accel_y_post__approximate_entropy__m_2__r_0.5',
+         'gyro_z_post__ratio_beyond_r_sigma__r_1',
+         'accel_y_post__energy_ratio_by_chunks__num_segments_10__segment_focus_6',
+         'gyro_x_post__lempel_ziv_complexity__bins_5',
+         'accel_y_post__quantile__q_0.1', 'gyro_x_post__count_below__t_0',
+         'gyro_z_post__lempel_ziv_complexity__bins_100',
+         'gyro_z_post__approximate_entropy__m_2__r_0.5']
 
 
 class KEYS:

@@ -14,7 +14,8 @@ import argparse
 
 from src.config import MLCONFIG
 from src.model import BaseModel
-
+from src.dataloader import DataLoader
+from src.feature_generator import FeatureEngineering
 
 class Trainer:
     def __init__(
@@ -93,14 +94,31 @@ if __name__ == "__main__":
         required=False,
         choices=["mm", "ss", "qt"],
     )
+    parser.add_argument(
+        "--window", type=float, default=4, required=False
+    )
+
     args = parser.parse_args()
     scaler = {"mm": "MinMax", "ss": "Standard", "qt": "Quantile"}
     base = {"lr": "LogisticRegression", "rf": "RandomForest"}
 
-    # load some sample data
-    iris = datasets.load_iris()
-    X = pd.DataFrame(iris.data[:, :2], columns=["a", "b"])
-    y = iris.target
+    # load data via athena
+    dataloader = DataLoader()
+    # TODO: To revise this
+    QUERY = """
+        SELECT
+            *,
+            case when uuid like '%_walk_%' then true else false end as target
+        FROM
+            "smu-iot"."microbit"
+        WHERE
+            seconds IS NOT null AND uuid = 'songhan_walk_1'
+        ORDER BY
+            uuid, timestamp, seconds    
+    """
+    df = dataloader.load_data(QUERY, 'smu-iot')
+    feature_eng = FeatureEngineering()
+    X, y = feature_eng.transform(df)
     ID = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     # Set up experiment
