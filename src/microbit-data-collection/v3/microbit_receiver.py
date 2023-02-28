@@ -3,6 +3,7 @@ def on_received_string(receivedString):
     count += 1
     received_val = receivedString
     serial.write_line(received_val)
+    basic.pause(10)
 radio.on_received_string(on_received_string)
 
 count_old = 0
