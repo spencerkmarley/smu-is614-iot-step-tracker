@@ -66,6 +66,19 @@ class MLCONFIG:
         ),
     }
 
+    STEP_SECONDS = 0.07
+    WINDOW_DURATION = 4
+    WINDOW_N = 58 # approx to 4/0.07
+    BASE_FEATURES = [
+        'accel_x',
+        'gyro_x',
+        'accel_y',
+        'gyro_y',
+        'accel_z',
+        'gyro_z'
+    ]
+
+
 
 class KEYS:
     AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
