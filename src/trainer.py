@@ -112,13 +112,13 @@ if __name__ == "__main__":
         FROM
             "smu-iot"."microbit"
         WHERE
-            seconds IS NOT null AND uuid = 'songhan_walk_1'
+            seconds IS NOT null
         ORDER BY
             uuid, timestamp, seconds    
     """
     df = dataloader.load_data(QUERY, 'smu-iot')
     feature_eng = FeatureEngineering()
-    X, y = feature_eng.transform(df)
+    X, y = feature_eng.transform(df, window_duration=args.window)
     ID = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     # Set up experiment
