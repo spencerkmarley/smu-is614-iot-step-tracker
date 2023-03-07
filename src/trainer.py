@@ -8,21 +8,23 @@ import mlflow
 import mlflow.sklearn
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV
-from sklearn import datasets
 import pandas as pd
 import argparse
+import boto3
 
-from src.config import MLCONFIG
+from src.config import MLCONFIG, KEYS
 from src.model import BaseModel
 from src.dataloader import DataLoader
 from src.feature_generator import FeatureEngineering
 
+
 class Trainer:
     def __init__(
         self,
-        scaler: TransformerMixin = MLCONFIG.SCALERS.get("Quantile"),
+        scaler: TransformerMixin = MLCONFIG.SCALERS.get("Standard"),
         hyperparam_space: Dict = MLCONFIG.HYPERPARAMETERS.get("LogisticRegression"),
         model_config: BaseModel = BaseModel(),
+        feature_eng_config: FeatureEngineering = FeatureEngineering(),
         eval_config: Dict = MLCONFIG.BASE_SCORER,
         cv_splitter: BaseShuffleSplit = MLCONFIG.CV_SPLIT,
     ) -> None:
@@ -30,7 +32,14 @@ class Trainer:
         self.eval_config = eval_config
         self.hyperparam_space = hyperparam_space
         self.scaler = scaler
-        self.pipe = Pipeline([("scl", self.scaler), ("clf", self.model_config)])
+        self.feature_generator = feature_eng_config
+        self.pipe = Pipeline(
+            [
+                ("fe", self.feature_generator),
+                ("scl", self.scaler),
+                ("clf", self.model_config),
+            ]
+        )
         self.grid_search_cv = GridSearchCV(
             estimator=self.pipe,
             param_grid=self.hyperparam_space,
@@ -94,16 +103,19 @@ if __name__ == "__main__":
         required=False,
         choices=["mm", "ss", "qt"],
     )
-    parser.add_argument(
-        "--window", type=float, default=4, required=False
-    )
+    parser.add_argument("--window", type=float, default=4, required=False)
 
     args = parser.parse_args()
     scaler = {"mm": "MinMax", "ss": "Standard", "qt": "Quantile"}
     base = {"lr": "LogisticRegression", "rf": "RandomForest"}
 
     # load data via athena
-    dataloader = DataLoader()
+    session = boto3.setup_default_session(
+        region_name=KEYS.AWS_DEFAULT_REGION,
+        aws_access_key_id=KEYS.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=KEYS.AWS_SECRET_ACCESS_KEY,
+    )
+    dataloader = DataLoader(session=session)
     # TODO: To revise this
     QUERY = """
         SELECT
@@ -114,12 +126,13 @@ if __name__ == "__main__":
         WHERE
             seconds IS NOT null
         ORDER BY
-            uuid, timestamp, seconds    
+            uuid, timestamp, seconds
     """
-    df = dataloader.load_data(QUERY, 'smu-iot')
-    feature_eng = FeatureEngineering()
-    X, y = feature_eng.transform(df, window_duration=args.window)
+    df = dataloader.load_data(QUERY, "smu-iot")
+    # feature_eng = FeatureEngineering()
+    # X, y = feature_eng.transform(df, window_duration=args.window)
     ID = datetime.now().strftime("%Y%m%d_%H%M%S")
+    X, y = df, df.uuid
 
     # Set up experiment
     mlflow.set_tracking_uri(f"{PATHS.ROOT_DIR}/mlflow/mlruns")
@@ -129,15 +142,33 @@ if __name__ == "__main__":
     with mlflow.start_run(
         experiment_id=experiment.experiment_id, run_name=f"model_{ID}"
     ):
+        fe_settings = {
+            "upload_to_s3": False,
+            "apply_smooth_filter": True,
+            "apply_median_filter": True,
+            "apply_savgol_filter": False,
+            "extract_features": True,
+            # "window_duration": 4,
+            # "step_seconds": 0.07
+        }
+
         MODEL = BaseModel()
         SCALER = MLCONFIG.SCALERS.get(scaler.get(args.scaler))
         HYP = MLCONFIG.HYPERPARAMETERS.get(base.get(args.base))
-        trainer = Trainer(model_config=MODEL, scaler=SCALER, hyperparam_space=HYP)
+        FE = FeatureEngineering(**fe_settings)
+
+        trainer = Trainer(
+            model_config=MODEL,
+            scaler=SCALER,
+            hyperparam_space=HYP,
+            feature_eng_config=FE,
+        )
 
         trainer.fit(X, y)
         best_params, best_est, best_score = trainer.evaluate()
 
         mlflow.log_params(params=best_params)
+        mlflow.log_params(params=fe_settings)
         mlflow.log_metric(key="AUC", value=best_score)
         mlflow.set_tags(
             tags={

@@ -1,45 +1,45 @@
 import boto3
 import pandas as pd
-import time
-import numpy as np
-import awswrangler
-from config import MLCONFIG, QUERY
+import awswrangler as wr
+from awswrangler.exceptions import QueryFailed
+from src.config import KEYS, PATHS, QUERY
 
 
 class DataLoader:
-    def __init__(
-        self
-    ) -> None:
+    def __init__(self, session: boto3.Session) -> None:
+        self.session = session
 
-        self.data = pd.DataFrame()
-        self.client = boto3.client("athena")
-
-    def load_data(self, query, database) -> None:
+    def load_data(self, query: str, database: str) -> None:
         """
         Load data from AWS Athena
-
-            Args:
-                query: query for data extraction from athena
-                database: name of database for data extraction
-            Returns:
-                None
+        Args:
+            query: query for data extraction from athena
+            database: name of database for data extraction
+        Returns:
+            None
         """
         try:
-            self.data = awswrangler.athena.read_sql_query(sql=query, database=database)
-            print ("Query is successful!")
-        except:
-            print (f"Unable to connect to {database}")
+            self.data = wr.athena.read_sql_query(
+                sql=query, database=database, boto3_session=self.session
+            )
+        except QueryFailed as err:
+            raise QueryFailed(err)
 
         return self.data
-
-    def display_data(self) -> None:
-        print (self.data)
 
     def get_data(self) -> pd.DataFrame:
-        return self.data
+        try:
+            return self.data
+        except AttributeError as err:
+            raise AttributeError(err)
 
 
 if __name__ == "__main__":
-    dataloader = DataLoader()
-    dataloader.load_data(QUERY.RAW_DATA, 'smu-iot')
-    dataloader.display_data()
+    session = boto3.setup_default_session(
+        region_name=KEYS.AWS_DEFAULT_REGION,
+        aws_access_key_id=KEYS.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=KEYS.AWS_SECRET_ACCESS_KEY,
+    )
+    dataloader = DataLoader(session=session)
+    dataloader.load_data(query=QUERY.RAW_DATA, database=PATHS.DB_TEST)
+    print(dataloader.get_data())
