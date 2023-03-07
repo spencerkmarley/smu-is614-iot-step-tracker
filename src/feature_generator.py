@@ -30,7 +30,7 @@ class FeatureEngineering(BaseEstimator, TransformerMixin):
 
         self.upload_to_s3 = False
         self.apply_smooth_filter = True
-        self.apply_median_filter = True
+        self.apply_median_filter = False
         self.apply_savgol_filter = True
         self.extract_features = True
         self.window_duration = 4
@@ -38,9 +38,7 @@ class FeatureEngineering(BaseEstimator, TransformerMixin):
 
         allowed_keys = list(self.__dict__.keys())
         self.__dict__.update(
-            (key, value)
-            for key, value in kwargs.items()
-            if key in allowed_keys
+            (key, value) for key, value in kwargs.items() if key in allowed_keys
         )
 
     def print_attributes(self):
@@ -71,9 +69,9 @@ class FeatureEngineering(BaseEstimator, TransformerMixin):
         # apply label encoding
 
         X_eng["target_label"] = X_eng["uuid"].str.split("_").str[1]
-        X_eng["target_label"] = X_eng["target_label"].map(
-            self.label_encoding_map
-        ).fillna(0)
+        X_eng["target_label"] = (
+            X_eng["target_label"].map(self.label_encoding_map).fillna(0)
+        )
 
         # apply smoothing
         if self.apply_smooth_filter:
@@ -134,9 +132,7 @@ class FeatureEngineering(BaseEstimator, TransformerMixin):
                         .values
                     )
                 if apply_savgol_filter:
-                    window_length = min(
-                        next_idx - idx, self.savgol_window_length
-                    )
+                    window_length = min(next_idx - idx, self.savgol_window_length)
                     polyorder = window_length // 2
                     X_eng_post.loc[idx:next_idx, self.post_feature_names] = (
                         X_eng_post.loc[idx:next_idx, self.base_features]
@@ -167,9 +163,7 @@ class FeatureEngineering(BaseEstimator, TransformerMixin):
         """
 
         features = extract_features(
-            timeseries_container=X_eng[
-                ["seconds", "ts_id", *self.post_feature_names]
-            ],
+            timeseries_container=X_eng[["seconds", "ts_id", *self.post_feature_names]],
             column_id="ts_id",
             column_sort="seconds",
         )
@@ -192,15 +186,17 @@ if __name__ == "__main__":
     fe_settings = {
         "upload_to_s3": False,
         "apply_smooth_filter": True,
-        "apply_median_filter": True,
-        "apply_savgol_filter": False,
+        "apply_median_filter": False,
+        "apply_savgol_filter": True,
         "extract_features": True,
+        "window_duration": 4,
+        "step_seconds": 0.07,
     }
     fe = FeatureEngineering(**fe_settings)
 
     fe.print_attributes()
 
     df = pd.read_csv(PATHS.DATA_DIR / "test.csv")
-
-    X, y = fe.fit_transform(df)
-    print(y)
+    X, y = df, df.uuid
+    X_proc, y_proc = fe.fit_transform(X, y)
+    print(len(X_proc), len(y_proc))
