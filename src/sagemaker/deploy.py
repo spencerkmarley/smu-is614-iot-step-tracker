@@ -5,9 +5,10 @@ from sagemaker.serverless import ServerlessInferenceConfig
 import tarfile
 
 # Zip the model up
-model_filename = 'model.tar.gz' # the name of the file you want to save your model to
-tar = tarfile.open(model_filename, 'w:gz') # create a tar.gz file
-tar.add('model.sav') # add the model file to the tar.gz file
+# model_filename = 'model.tar.gz' # the name of the file you want to save your model to
+# tar = tarfile.open(model_filename, 'w:gz') # create a tar.gz file
+# tar.add('model.sav') # add the model file to the tar.gz file
+model_filename = 'model.sav' # the name of the file you want to save your model to
 
 # Upload the model to S3
 s3_bucket = 'smu-is614-iot-step-tracker' # the name of the S3 bucket
