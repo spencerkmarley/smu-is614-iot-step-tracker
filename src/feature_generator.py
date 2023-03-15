@@ -114,7 +114,7 @@ class FeatureEngineering(BaseEstimator, TransformerMixin):
 
         """
         ts_id = 0
-        X_eng_post = X_eng.copy()
+        X_eng_post = X_eng.copy().sort_index().reset_index(drop=True)
 
         self.window_n = int(self.window_duration // self.step_seconds)
         self.savgol_window_length = min(20, self.window_n)
