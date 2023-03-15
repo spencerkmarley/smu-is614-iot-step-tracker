@@ -1,0 +1,15 @@
+artifact_uri: /Users/spencermarley/Documents/09-github/smu-is614-iot-step-tracker/mlflow/mlruns/784673017186658412/fbfa43890afb4e6391bf4ae3161bfabc/artifacts
+end_time: 1678845378863
+entry_point_name: ''
+experiment_id: '784673017186658412'
+lifecycle_stage: active
+run_id: fbfa43890afb4e6391bf4ae3161bfabc
+run_name: model_20230315_095543
+run_uuid: fbfa43890afb4e6391bf4ae3161bfabc
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1678845343852
+status: 4
+tags: []
+user_id: spencermarley
