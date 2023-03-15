@@ -5,9 +5,9 @@ from src.config import MLCONFIG, PATHS
 from sklearn.base import BaseEstimator, TransformerMixin
 import numpy.typing as npt
 from typing import List, Tuple, Dict
-from tsfresh.feature_selection.relevance import calculate_relevance_table
 from tsfresh import extract_features
 from scipy.signal import savgol_filter, medfilt
+from sklearn.impute import KNNImputer
 
 
 # instantiate class wrapper to perform data transformations
@@ -66,8 +66,11 @@ class FeatureEngineering(BaseEstimator, TransformerMixin):
 
         X_eng = X.copy()
 
-        # apply label encoding
+        # apply missingness imputation
+        imputer = KNNImputer(n_neighbors=2, weights="uniform")
+        X_eng[self.base_features] = imputer.fit_transform(X_eng[self.base_features])
 
+        # apply label encoding
         X_eng["target_label"] = X_eng["uuid"].str.split("_").str[1]
         X_eng["target_label"] = (
             X_eng["target_label"].map(self.label_encoding_map).fillna(0)
@@ -83,6 +86,9 @@ class FeatureEngineering(BaseEstimator, TransformerMixin):
         # feature extraction
         if self.extract_features:
             X_eng = self._extract_features(X_eng)
+
+        # Redundancy - NA
+        X_eng = X_eng.dropna(axis="index", how="any")
 
         # upload to S3
         if self.upload_to_s3:
@@ -145,7 +151,9 @@ class FeatureEngineering(BaseEstimator, TransformerMixin):
                         .values
                     )
 
-                X_eng_post.loc[idx:next_idx, "ts_id"] = ts_id
+                X_eng_post.loc[
+                    idx:next_idx, "ts_id"
+                ] = f"{X_eng_post.uuid[idx]}__{ts_id}"
                 ts_id += 1
 
         return X_eng_post
@@ -177,7 +185,7 @@ class FeatureEngineering(BaseEstimator, TransformerMixin):
                 other=features[np.append(self.top_features, ["n_steps"])],
                 on=["ts_id"],
             )
-        )
+        ).reset_index()
 
         return X_eng_post
 
