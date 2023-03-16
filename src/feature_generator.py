@@ -174,6 +174,7 @@ class FeatureEngineering(BaseEstimator, TransformerMixin):
             timeseries_container=X_eng[["seconds", "ts_id", *self.post_feature_names]],
             column_id="ts_id",
             column_sort="seconds",
+            default_fc_parameters=MLCONFIG.FEATURE_SETTINGS
         )
         features["n_steps"] = (
             features[self.steps_count_features].median(axis=1).astype(np.int)
