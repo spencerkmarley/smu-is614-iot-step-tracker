@@ -1,7 +1,9 @@
 import pandas as pd
+import boto3
 import numpy as np
 import awswrangler as wr
-from src.config import MLCONFIG, PATHS
+from src.config import MLCONFIG, PATHS, KEYS
+from src.dataloader import DataLoader
 from sklearn.base import BaseEstimator, TransformerMixin
 import numpy.typing as npt
 from typing import List, Tuple, Dict
@@ -70,11 +72,11 @@ class FeatureEngineering(BaseEstimator, TransformerMixin):
         imputer = KNNImputer(n_neighbors=2, weights="uniform")
         X_eng[self.base_features] = imputer.fit_transform(X_eng[self.base_features])
 
-        # apply label encoding
-        X_eng["target_label"] = X_eng["uuid"].str.split("_").str[1]
-        X_eng["target_label"] = (
-            X_eng["target_label"].map(self.label_encoding_map).fillna(0)
-        )
+        # apply label encoding -- step done during training 
+        # X_eng["target_label"] = X_eng["uuid"].str.split("_").str[1] 
+        # X_eng["target_label"] = (
+        #     X_eng["target_label"].map(self.label_encoding_map).fillna(0)
+        # )
 
         # apply smoothing
         if self.apply_smooth_filter:
@@ -192,8 +194,30 @@ class FeatureEngineering(BaseEstimator, TransformerMixin):
 
 
 if __name__ == "__main__":
+
+    session = boto3.setup_default_session(
+            region_name=KEYS.AWS_DEFAULT_REGION,
+            aws_access_key_id=KEYS.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=KEYS.AWS_SECRET_ACCESS_KEY,
+        )
+    dataloader = DataLoader(
+        session=session
+    )
+    
+    QUERY = """
+        SELECT
+            *,
+            case when uuid like '%_walk_%' then true else false end as target
+        FROM
+            "smu-iot"."microbit"
+        WHERE seconds IS NOT NULL
+        ORDER BY
+            uuid, timestamp, seconds
+    """
+    df = dataloader.load_data(QUERY, "smu-iot")
+
     fe_settings = {
-        "upload_to_s3": False,
+        "upload_to_s3": True, 
         "apply_smooth_filter": True,
         "apply_median_filter": False,
         "apply_savgol_filter": True,
@@ -203,9 +227,6 @@ if __name__ == "__main__":
     }
     fe = FeatureEngineering(**fe_settings)
 
-    fe.print_attributes()
+    fe.fit_transform(df, df.uuid)
 
-    df = pd.read_csv(PATHS.DATA_DIR / "test.csv")
-    X, y = df, df.uuid
-    X_proc, y_proc = fe.fit_transform(X, y)
-    print(len(X_proc), len(y_proc))
+    print("SUCCESS")
