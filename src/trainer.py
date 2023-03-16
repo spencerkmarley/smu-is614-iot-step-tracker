@@ -1,16 +1,15 @@
-from typing import Dict, Tuple
+import boto3
 import numpy.typing as npt
+from typing import Dict, Tuple
 from sklearn.base import TransformerMixin
 from sklearn.model_selection import BaseShuffleSplit
 from datetime import datetime
-from src.config import PATHS
 import mlflow
 import mlflow.sklearn
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV
 import pandas as pd
 import argparse
-import boto3
 
 from src.config import MLCONFIG, KEYS
 from src.model import BaseModel
@@ -24,7 +23,6 @@ class Trainer:
         scaler: TransformerMixin = MLCONFIG.SCALERS.get("Standard"),
         hyperparam_space: Dict = MLCONFIG.HYPERPARAMETERS.get("LogisticRegression"),
         model_config: BaseModel = BaseModel(),
-        # feature_eng_config: FeatureEngineering = FeatureEngineering(),
         eval_config: Dict = MLCONFIG.BASE_SCORER,
         cv_splitter: BaseShuffleSplit = MLCONFIG.CV_SPLIT,
     ) -> None:
@@ -32,7 +30,6 @@ class Trainer:
         self.eval_config = eval_config
         self.hyperparam_space = hyperparam_space
         self.scaler = scaler
-        # self.feature_generator = feature_eng_config
         self.pipe = Pipeline(
             [
                 ("scl", self.scaler),
@@ -73,7 +70,7 @@ class Trainer:
 
 
 if __name__ == "__main__":
-    # parse arguments
+    # 1. Parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--base", type=str, default="lr", required=False, choices=["lr", "rf"]
@@ -91,14 +88,14 @@ if __name__ == "__main__":
     scaler = {"mm": "MinMax", "ss": "Standard", "qt": "Quantile"}
     base = {"lr": "LogisticRegression", "rf": "RandomForest"}
 
-    # load data via athena
+    # 2. Load data via athena
     session = boto3.setup_default_session(
         region_name=KEYS.AWS_DEFAULT_REGION,
         aws_access_key_id=KEYS.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=KEYS.AWS_SECRET_ACCESS_KEY,
     )
     dataloader = DataLoader(session=session)
-    # TODO: To revise this
+     
     QUERY = """
         SELECT
             *,
@@ -112,8 +109,9 @@ if __name__ == "__main__":
     """
     df = dataloader.load_data(QUERY, "smu-iot")
 
+    # 3. Perform feature engineering
     fe_settings = {
-        "upload_to_s3": True,
+        "upload_to_s3": False, # s3://smu-is614-iot-step-tracker/inference/interim/1678953483395.csv
         "apply_smooth_filter": True,
         "apply_median_filter": False,
         "apply_savgol_filter": True,
@@ -124,10 +122,15 @@ if __name__ == "__main__":
     FE = FeatureEngineering(**fe_settings)
     X, y = FE.fit_transform(df, df.uuid)
 
-    ID = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    # Set up experiment
-    mlflow.set_tracking_uri(f"{PATHS.ROOT_DIR}/mlflow/mlruns")
+    # Set up experiment 
+    # Local 
+    # mlflow.set_tracking_uri(f"{PATHS.ROOT_DIR}/mlflow/mlruns")
+
+    ID = datetime.now().strftime("%Y%m%d_%H%M%S")
+    mlflow.set_tracking_uri(
+        "http://ec2-3-1-195-80.ap-southeast-1.compute.amazonaws.com:5000/"
+    )
     experiment = mlflow.set_experiment(experiment_name="ml_experiments")
 
     with mlflow.start_run(
@@ -142,7 +145,6 @@ if __name__ == "__main__":
             model_config=MODEL,
             scaler=SCALER,
             hyperparam_space=HYP,
-            # feature_eng_config=FE,
         )
 
         trainer.fit(X, y)
