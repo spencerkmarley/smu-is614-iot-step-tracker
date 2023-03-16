@@ -16,21 +16,33 @@ model_s3_key = f'{bucket_prefix}/{model_filename}' # the relative S3 path
 s3_client = boto3.client('s3') # create an S3 client
 s3_client.upload_file(model_filename, s3_bucket, model_s3_key) # upload the model to S3
 
-# Define the model
-model_url = f's3://{s3_bucket}/{model_s3_key}' # Combine bucket name, model file name, and relate S3 path to create S3 model URI
+# Set up the SageMaker client
+aws_region = 'ap-southeast-1'
+sagemaker_client = boto3.client('sagemaker', region_name=aws_region)
 sagemaker_role= 'arn:aws:iam::371380984152:role/SageMaker-SMU-IOT' # Role to give SageMaker permission to access AWS services.
+
+# Define the model
+model_name = 'smu-is614-iot-step-tracker' # The name of the model
+model_url = f's3://{s3_bucket}/{model_s3_key}' # Combine bucket name, model file name, and relate S3 path to create S3 model URI
 entry_point = 'model.sav' # The name of the file that contains the model
 py_version = 'py3' # Python version
+framework = 'scikit-learn' # The name of the framework
 version = '1.0-1' # Version of the framework or algorithm
+container = image_uris.retrieve(region=aws_region, framework=framework, version=version) # Get the container image URI
 
-model = SKLearnModel(
-    model_data=model_url,
-    role=sagemaker_role,
-    entry_point=entry_point,
-    py_version=py_version,
-    framework_version=version
-)
+# Create the model
+create_model_response = sagemaker_client.create_model(
+    ModelName=model_name,
+    ExecutionRoleArn=sagemaker_role,
+    PrimaryContainer={
+        'Image': container,
+        'ModelDataUrl': model_url
+    })
 
 # Deploy the model
-serverless_config = ServerlessInferenceConfig()
-serverless_predictor = model.deploy(serverless_inference_config=serverless_config)
+endpoint_name = 'smu-is614-iot-step-tracker' # The name of the endpoint
+endpoint_config_name = 'smu-is614-iot-step-tracker' # The name of the endpoint configuration
+create_endpoint_response = sagemaker_client.create_endpoint(
+    EndpointName=endpoint_name,
+    EndpointConfigName=endpoint_config_name
+    )
