@@ -26,6 +26,7 @@ from datetime import datetime
 from csv import reader
 import os
 import AWSIoTPythonSDK.MQTTLib as AWSIoTPyMQTT
+import boto3 
 
 CLIENT = "microbit"
 ENDPOINT = "a336e03nfdcvqi-ats.iot.ap-southeast-1.amazonaws.com"
@@ -33,7 +34,7 @@ ENDPOINT = "a336e03nfdcvqi-ats.iot.ap-southeast-1.amazonaws.com"
 ROOT_PEM = "certificates/root.pem"
 PRIVATE_PEM_KEY = "certificates/33d027bba80745d5587a65c0d230a4de5eb7c3917c49d85e2d456d7e83670b56-private.pem.key"
 CERTIFICATE_PEM_CRT = "certificates/33d027bba80745d5587a65c0d230a4de5eb7c3917c49d85e2d456d7e83670b56-certificate.pem.crt"
-TOPIC = "microbit"
+TOPIC = "demo"
 
 def publish(client, endpoint, root_pem, private_pem_key, certificate_pem_crt, topic, payload):
     
@@ -49,11 +50,16 @@ def handle_serial_data(s: serial.Serial) -> None:
     payload = s.readline().decode("utf-8").strip()
     print(payload)
 
+# print the current time 
+print(datetime.now())
+# create the filenanme 
+filename = "datadump_" + str(datetime.now().strftime("%Y-%m-%d-%H-%M-%S")) + ".csv"
+    
 # declare how long you want to collect the data      
-seconds = 300 #put a shorter timing to test out first  
+seconds = 30 
+
 # declare the uuid of the data
-# uuid = 'licheng_walk'+ '_' + str(datetime.now().strftime("%m-%d-%H-%M"))
-uuid = 'licheng_dynamic_1'
+uuid = 'testing'
     
 s = serial.Serial()
 s.baudrate = 115200
@@ -63,11 +69,6 @@ s.open()
 print('port opened')
 s.reset_input_buffer()
 s.reset_output_buffer()
-
-# print the current time 
-print(datetime.now())
-# create the filenanme 
-filename = "datadump" + str(datetime.now().strftime("%Y-%m-%d-%H-%M-%S")) + ".csv"
 
 # records the start time so we can track the time elasped
 start_time = time.time()
@@ -81,7 +82,6 @@ done = False
 # while loop 
 while done == False:
     # read the raw data   
-
     data1 = str(s.readline().decode("utf-8").strip())
     
     # split the message first     
@@ -108,23 +108,28 @@ while done == False:
         g = queue_gyro.pop(0)
         string_final = a[0] + ',' + a[1] + ',' + a[2] + ',' + g[0] + ',' + g[1] + ',' + g[2] + ',' + a[3] + ',' + a[4] + ',' + a[5]
         
-        # create/update payload
+        # write to local csv
+        if string_final is not None:
+            with open(str(filename), "a") as myfile:
+                myfile.write(str(string_final)+"\n")  
         
+        # create/update payload
         # within x number of rows, time to add a message 
         if payload_count < 200:
             print(string_final)
             string_collection = string_collection + '\n' + string_final
             payload_count += 1
+            
         # exceed x number of rows, time to send message 
         else: 
-#             print(string_collection)
+            # publishes the data to jian's dashboard 
             publish(CLIENT, ENDPOINT, ROOT_PEM, PRIVATE_PEM_KEY, CERTIFICATE_PEM_CRT, TOPIC, string_collection)
             string_collection = '' 
             payload_count = 0 
             
-    # for tracking the end time     
+    # for tracking the end time + make sure to send everything    
     end_time = time.time()
-    if end_time - start_time > seconds: 
+    if end_time - start_time > seconds and payload_count == 0: 
         done = True
     
 # prints the end time 
@@ -135,3 +140,7 @@ s.close()
 print('port closed')
 print(len(queue_accel), len(queue_gyro))
 
+# send the collected csv data for inference 
+s3 = boto3.resource('s3')
+s3.meta.client.upload_file(filename, 'smu-is614-iot-step-tracker', 'microbit/demo/{}'.format(filename))
+print('file sent !')
