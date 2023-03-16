@@ -24,7 +24,7 @@ class Trainer:
         scaler: TransformerMixin = MLCONFIG.SCALERS.get("Standard"),
         hyperparam_space: Dict = MLCONFIG.HYPERPARAMETERS.get("LogisticRegression"),
         model_config: BaseModel = BaseModel(),
-        feature_eng_config: FeatureEngineering = FeatureEngineering(),
+        # feature_eng_config: FeatureEngineering = FeatureEngineering(),
         eval_config: Dict = MLCONFIG.BASE_SCORER,
         cv_splitter: BaseShuffleSplit = MLCONFIG.CV_SPLIT,
     ) -> None:
@@ -32,10 +32,9 @@ class Trainer:
         self.eval_config = eval_config
         self.hyperparam_space = hyperparam_space
         self.scaler = scaler
-        self.feature_generator = feature_eng_config
+        # self.feature_generator = feature_eng_config
         self.pipe = Pipeline(
             [
-                ("fe", self.feature_generator),
                 ("scl", self.scaler),
                 ("clf", self.model_config),
             ]
@@ -71,23 +70,6 @@ class Trainer:
         best_est = self.grid_search_cv.best_estimator_
         best_score = self.grid_search_cv.best_score_
         return best_params, best_est, best_score
-
-    # def export_best_model(self, dir_path: Path, name: str) -> None:
-    #     """
-    #     Exports a trained model to the given directory.
-
-    #     Parameters
-    #     ----------
-    #     model : The trained model to be exported
-    #     dir_path : Target directory
-    #     name : File name to save the model as
-    #     """
-
-    #     path = f"{dir_path}/{name}"
-    #     joblib.dump(self.model_config, path)
-
-    #     ### To change
-    #     print(f"Model saved to 'path'")
 
 
 if __name__ == "__main__":
@@ -129,39 +111,38 @@ if __name__ == "__main__":
             uuid, timestamp, seconds
     """
     df = dataloader.load_data(QUERY, "smu-iot")
-    # feature_eng = FeatureEngineering()
-    # X, y = feature_eng.transform(df, window_duration=args.window)
+
+    fe_settings = {
+        "upload_to_s3": False,
+        "apply_smooth_filter": True,
+        "apply_median_filter": False,
+        "apply_savgol_filter": True,
+        "extract_features": True,
+        "window_duration": 4,
+        "step_seconds": 0.07,
+    }
+    FE = FeatureEngineering(**fe_settings)
+    X, y = FE.fit_transform(df, df.uuid)
+
     ID = datetime.now().strftime("%Y%m%d_%H%M%S")
-    X, y = df, df.uuid
 
     # Set up experiment
     mlflow.set_tracking_uri(f"{PATHS.ROOT_DIR}/mlflow/mlruns")
-    print(f"{PATHS.ROOT_DIR}/mlflow/mlruns")
     experiment = mlflow.set_experiment(experiment_name="ml_experiments")
 
     with mlflow.start_run(
         experiment_id=experiment.experiment_id, run_name=f"model_{ID}"
     ):
-        fe_settings = {
-            "upload_to_s3": False,
-            "apply_smooth_filter": True,
-            "apply_median_filter": True,
-            "apply_savgol_filter": False,
-            "extract_features": True,
-            # "window_duration": 4,
-            # "step_seconds": 0.07
-        }
 
         MODEL = BaseModel()
         SCALER = MLCONFIG.SCALERS.get(scaler.get(args.scaler))
         HYP = MLCONFIG.HYPERPARAMETERS.get(base.get(args.base))
-        FE = FeatureEngineering(**fe_settings)
 
         trainer = Trainer(
             model_config=MODEL,
             scaler=SCALER,
             hyperparam_space=HYP,
-            feature_eng_config=FE,
+            # feature_eng_config=FE,
         )
 
         trainer.fit(X, y)
