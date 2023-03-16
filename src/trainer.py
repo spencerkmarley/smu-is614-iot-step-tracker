@@ -113,7 +113,7 @@ if __name__ == "__main__":
     df = dataloader.load_data(QUERY, "smu-iot")
 
     fe_settings = {
-        "upload_to_s3": False,
+        "upload_to_s3": True,
         "apply_smooth_filter": True,
         "apply_median_filter": False,
         "apply_savgol_filter": True,
