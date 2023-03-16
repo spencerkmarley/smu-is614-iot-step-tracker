@@ -3,6 +3,8 @@ from sagemaker.sklearn import SKLearnModel
 from sagemaker import image_uris
 from sagemaker.serverless import ServerlessInferenceConfig
 import tarfile
+import datetime
+from time import gmtime, strftime
 
 # Zip the model up
 model_filename = 'model.tar.gz' # the name of the file you want to save your model to
@@ -26,7 +28,7 @@ model_name = 'smu-is614-iot-step-tracker' # The name of the model
 model_url = f's3://{s3_bucket}/{model_s3_key}' # Combine bucket name, model file name, and relate S3 path to create S3 model URI
 entry_point = 'model.sav' # The name of the file that contains the model
 py_version = 'py3' # Python version
-framework = 'scikit-learn' # The name of the framework
+framework = 'sklearn' # The name of the framework
 version = '1.0-1' # Version of the framework or algorithm
 container = image_uris.retrieve(region=aws_region, framework=framework, version=version) # Get the container image URI
 
@@ -39,9 +41,27 @@ create_model_response = sagemaker_client.create_model(
         'ModelDataUrl': model_url
     })
 
+# Create the endpoint configuration
+endpoint_config_name = 'smu-is614-iot-step-tracker' # The name of the endpoint configuration
+instance_type = 'ml.m5.large' # The type of instance to deploy the model to
+endpoint_config_response = sagemaker_client.create_endpoint_config(
+    EndpointConfigName=endpoint_config_name, # You will specify this name in a CreateEndpoint request.
+    # List of ProductionVariant objects, one for each model that you want to host at this endpoint.
+    ProductionVariants=[
+        {
+            "VariantName": "variant1", # The name of the production variant.
+            "ModelName": model_name, 
+            "InstanceType": instance_type, # Specify the compute instance type.
+            "InitialInstanceCount": 1 # Number of instances to launch initially.
+        }
+    ]
+)
+
+print(f"Created EndpointConfig: {endpoint_config_response['EndpointConfigArn']}")
+
+
 # Deploy the model
 endpoint_name = 'smu-is614-iot-step-tracker' # The name of the endpoint
-endpoint_config_name = 'smu-is614-iot-step-tracker' # The name of the endpoint configuration
 create_endpoint_response = sagemaker_client.create_endpoint(
     EndpointName=endpoint_name,
     EndpointConfigName=endpoint_config_name
