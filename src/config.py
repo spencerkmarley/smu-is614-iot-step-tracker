@@ -1,6 +1,8 @@
 import os
+import boto3
 from pathlib import Path
 import numpy as np
+from botocore.exceptions import ClientError
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier

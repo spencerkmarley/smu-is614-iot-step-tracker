@@ -1,4 +1,5 @@
 # Byte-compiled / optimized / DLL files
+package/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -139,3 +140,6 @@ tableau/.~IoT__70231.twbr
 
 # MLflow experiments
 mlflow/
+
+requirements.txt
+package.*.zip

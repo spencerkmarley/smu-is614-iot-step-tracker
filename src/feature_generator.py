@@ -52,7 +52,7 @@ class FeatureEngineering(BaseEstimator, TransformerMixin):
         return self
 
     def transform(
-        self, X: pd.DataFrame, y: npt.ArrayLike = None
+        self, X: pd.DataFrame, y: npt.ArrayLike = None, label=False
     ) -> Tuple[pd.DataFrame]:
         """
         Data transformation pipeline
@@ -72,11 +72,13 @@ class FeatureEngineering(BaseEstimator, TransformerMixin):
         imputer = KNNImputer(n_neighbors=2, weights="uniform")
         X_eng[self.base_features] = imputer.fit_transform(X_eng[self.base_features])
 
-        # apply label encoding -- step done during training 
-        # X_eng["target_label"] = X_eng["uuid"].str.split("_").str[1] 
-        # X_eng["target_label"] = (
-        #     X_eng["target_label"].map(self.label_encoding_map).fillna(0)
-        # )
+
+        # apply label encoding
+        if label:
+            X_eng["target_label"] = X_eng["uuid"].str.split("_").str[1]
+            X_eng["target_label"] = (
+                X_eng["target_label"].map(self.label_encoding_map).fillna(0)
+            )
 
         # apply smoothing
         if self.apply_smooth_filter:
@@ -101,7 +103,10 @@ class FeatureEngineering(BaseEstimator, TransformerMixin):
                 index=False,
             )
 
-        return X_eng[self.top_features], X_eng["target_label"]
+        if label:
+            return X_eng[self.top_features], X_eng["target_label"]
+        else:
+            return X_eng[self.top_features], X_eng
 
     def _smooth_signal(
         self,
@@ -178,9 +183,11 @@ class FeatureEngineering(BaseEstimator, TransformerMixin):
             column_sort="seconds",
             default_fc_parameters=MLCONFIG.FEATURE_SETTINGS
         )
+
+        #multiply by 2 since each cycle consists of two foot steps
         features["n_steps"] = (
             features[self.steps_count_features].median(axis=1).astype(np.int)
-        )
+        ) * 2
         X_eng_post = (
             X_eng.groupby(["ts_id"])
             .max()
