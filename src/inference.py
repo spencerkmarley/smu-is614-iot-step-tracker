@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--query", type=str, default="testing", required=False, choices=["lr", "rf"]
+        "--query", type=str, default="testing", required=False
     )
     parser.add_argument(
         "--model", type=str, default="mlflow-artifact-store/"
@@ -109,4 +109,6 @@ if __name__ == "__main__":
         print ("Uploaded inference result to s3.")
     except:
         print ("Unable to upload inference result to s3")
+
+    exit()
 
