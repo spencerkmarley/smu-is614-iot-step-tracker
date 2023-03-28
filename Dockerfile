@@ -10,6 +10,6 @@ RUN pip3 install -r requirements.txt #--target "${LAMBDA_TASK_ROOT}"
 COPY src ./src
 WORKDIR ${LAMBDA_TASK_ROOT}
 
-ENTRYPOINT ["python", "-m", "src.inference"]
+#ENTRYPOINT ["python", "-m", "src.inference.handler"]
 ##include the default file to be executed.
-#CMD ["-m", "src.inference"]
+CMD ["src.inference.lambda_handler"]
