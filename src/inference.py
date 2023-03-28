@@ -9,6 +9,7 @@ from src.config import PATHS
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV
 import pandas as pd
+import json
 import argparse
 import boto3
 import joblib
@@ -18,11 +19,15 @@ from src.model import BaseModel
 from src.dataloader import DataLoader
 from src.feature_generator import FeatureEngineering
 
-if __name__ == "__main__":
+def lambda_handler(event, context):
+
+    bucket_name = event["Records"][0]["s3"]["bucket"]["name"]
+    s3_file_name = event["Records"][0]["s3"]["object"]["key"]
+
     # parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--query", type=str, default="testing", required=False, choices=["lr", "rf"]
+        "--query", type=str, default="demo", required=False
     )
     parser.add_argument(
         "--model", type=str, default="mlflow-artifact-store/"
@@ -56,21 +61,29 @@ if __name__ == "__main__":
         aws_secret_access_key=KEYS.AWS_SECRET_ACCESS_KEY,
     )
 
-    dataloader = DataLoader(session=session)
-    QUERY = f"""
-        SELECT
-            *
-        FROM
-            "smu-iot"."microbit"
-        WHERE
-            seconds IS NOT null
-            AND
-            uuid LIKE '%{args.query}%'
-        ORDER BY
-            uuid, timestamp, seconds
-    """
 
-    df = dataloader.load_data(QUERY, "smu-iot")
+    # try:
+    bucket_name = event["Records"][0]["s3"]["bucket"]["name"]
+    s3_file_name = event["Records"][0]["s3"]["object"]["key"]
+
+    resp = s3.get_object(Bucket=bucket_name, Key=s3_file_name)
+
+    col_names = {
+        'timestamp': 'Int64',
+        'seconds': 'float32',
+        'uuid': 'string',
+        'gyro_x': 'float32',
+        'gyro_y': 'float32',
+        'gyro_z': 'float32',
+        'accel_x': 'float32',
+        'accel_y': 'float32',
+        'accel_z': 'float32'
+    }
+    dtypes = {k: v for k, v in col_names.items()}
+
+    # Read CSV file with specified column names and dtypes
+    df = pd.read_csv(resp['Body'], sep=',', names=col_names.keys(), dtype=col_names)
+    print ("Data loaded from s3 based on lambda event trigger")
 
     fe_settings = {
         "upload_to_s3": True,
@@ -109,4 +122,11 @@ if __name__ == "__main__":
         print ("Uploaded inference result to s3.")
     except:
         print ("Unable to upload inference result to s3")
+
+    return {
+        'statusCode': 200,
+         "headers": {
+            "Content-Type": "application/json"
+        }
+    }
 
